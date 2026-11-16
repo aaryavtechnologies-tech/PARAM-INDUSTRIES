@@ -158,17 +158,17 @@ export const CleanWaterHealthyLifeSection: React.FC<Props> = ({ lang, onConsultC
           {/* ========================================================= */}
           {viewMode === 'panoramic' && (
             <div>
-              {/* Grand 16:9 Master Banner Frame with Perfect Height (560px on Desktop) */}
+              {/* Grand 16:9 Master Banner Frame with Natural Unclipped Height */}
               <div
                 onClick={() => setShowFullBannerModal(true)}
-                className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 border-white/95 group bg-slate-950 w-full aspect-[16/9] max-h-[580px] mb-8 cursor-pointer flex items-center justify-center transition-all"
+                className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 border-white/95 group bg-gradient-to-r from-[#eef7fd] via-[#f7fbff] to-[#e8f4fc] w-full aspect-[16/9] mb-8 cursor-pointer flex items-center justify-center transition-all"
                 title={isGu ? 'સંપૂર્ણ હાઈ-રેઝોલ્યુશન બેનર જોવા ક્લિક કરો' : 'Click to view full uncropped high-resolution banner'}
               >
                 {/* 2X Master Banner: Exact 16:9 Aspect Ratio with 0% Cropped Text */}
                 <img
                   src="./images/param-clean-water-health-2x.jpg"
                   alt="PARAM INDUSTRIES - Smarter Water. Healthier Living. Clean water and healthy life"
-                  className="w-full h-full object-contain sm:object-cover group-hover:scale-[1.01] transition-transform duration-700"
+                  className="w-full h-full object-contain group-hover:scale-[1.01] transition-transform duration-700"
                 />
 
                 {/* Ambient Glass Highlight Rim */}
@@ -304,11 +304,11 @@ export const CleanWaterHealthyLifeSection: React.FC<Props> = ({ lang, onConsultC
           {viewMode === 'split' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
               
-              {/* Left Column: Contained Banner with Ambient Glass Padding (Nothing Cut Off!) */}
-              <div className="lg:col-span-6 relative flex flex-col justify-center">
+              {/* Left Column: Full Uncropped 16:9 Banner + Matching Technical Quality Specs */}
+              <div className="lg:col-span-6 flex flex-col justify-between gap-4">
                 <div
                   onClick={() => setShowFullBannerModal(true)}
-                  className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl border-4 border-white/95 group bg-gradient-to-br from-[#063C7C] via-[#075DB1] to-[#04244c] w-full h-full min-h-[420px] sm:min-h-[480px] lg:min-h-[520px] flex items-center justify-center cursor-pointer p-2 sm:p-4"
+                  className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border-4 border-white/95 group bg-gradient-to-r from-[#eef7fd] via-[#f7fbff] to-[#e8f4fc] w-full aspect-[16/9] flex items-center justify-center cursor-pointer transition-all"
                   title={isGu ? 'સંપૂર્ણ હાઈ-રેઝોલ્યુશન બેનર જોવા ક્લિક કરો' : 'Click to view full uncropped high-resolution banner'}
                 >
                   {/* Object Contain Ensures 100% of the Image is Visible Without Any Cropping */}
@@ -321,8 +321,25 @@ export const CleanWaterHealthyLifeSection: React.FC<Props> = ({ lang, onConsultC
                   {/* Ambient Glass Highlight Rim */}
                   <div className="absolute inset-0 ring-1 ring-inset ring-white/30 pointer-events-none rounded-2xl sm:rounded-3xl" />
 
+                  {/* Floating Glass Water Droplet Sphere Badge */}
+                  <div className="absolute bottom-3 left-3 p-1.5 sm:p-2 rounded-xl bg-white/95 backdrop-blur-md border border-white/80 shadow-md flex items-center gap-2">
+                    <img
+                      src="./images/water-sphere-eco.jpg"
+                      alt="Clean water healthy life sphere"
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg object-cover shrink-0"
+                    />
+                    <div className="text-left">
+                      <span className="text-[10px] font-black text-[#063C7C] leading-none block">
+                        {isGu ? 'શુદ્ધ પાણી' : 'Clean Water'}
+                      </span>
+                      <span className="text-[9px] font-bold text-[#0D874A] leading-tight block mt-0.5">
+                        {isGu ? 'સ્વસ્થ જીવન' : 'Healthy Life'}
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Top Action Pills */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10 pointer-events-none">
                     <div className="pointer-events-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-[#075DB1] text-white text-[11px] font-bold backdrop-blur-md border border-white/30 shadow-md transition-all">
                       <Maximize2 className="w-3.5 h-3.5" />
                       <span>{isGu ? 'મોટું કરીને જુઓ' : 'Expand'}</span>
@@ -332,6 +349,39 @@ export const CleanWaterHealthyLifeSection: React.FC<Props> = ({ lang, onConsultC
                       <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
                       <span>{isGu ? 'અમદાવાદ લાઈવ ડેમો' : 'Ahmedabad Demo'}</span>
                     </div>
+                  </div>
+                </div>
+
+                {/* Technical Trust Strip directly below image to match right column height perfectly */}
+                <div className="p-4 rounded-2xl bg-white/90 border border-sky-100 shadow-xs grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2 rounded-xl bg-sky-50/70">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
+                    <span className="text-[11px] font-bold text-slate-800 block">
+                      {isGu ? 'SS-304/316' : 'Food Grade'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {isGu ? 'સ્ટીલ બોડી' : 'Stainless Steel'}
+                    </span>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-emerald-50/70">
+                    <Droplet className="w-4 h-4 text-cyan-600 mx-auto mb-1" />
+                    <span className="text-[11px] font-bold text-slate-800 block">
+                      {isGu ? '૦% બગાડ' : '0% Wastage'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {isGu ? 'પાણી બચત' : 'Eco-Friendly'}
+                    </span>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-blue-50/70">
+                    <CheckCircle2 className="w-4 h-4 text-blue-600 mx-auto mb-1" />
+                    <span className="text-[11px] font-bold text-slate-800 block">
+                      {isGu ? 'મિનરલ્સ સુરક્ષિત' : 'Retains Ca/Mg'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      {isGu ? 'કુદરતી સ્વાદ' : 'Natural Taste'}
+                    </span>
                   </div>
                 </div>
               </div>
