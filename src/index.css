@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-deep: #063C7C;
+  --color-ocean: #075DB1;
+  --color-aqua: #06A9E0;
+  --color-cyan-light: #E5F8FC;
+  --color-eco-green: #0D874A;
+  --color-dark-navy: #102D53;
+  --font-sans: 'Plus Jakarta Sans', 'Noto Sans Gujarati', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: 'Plus Jakarta Sans', 'Noto Sans Gujarati', sans-serif;
+  background-color: #f7fcfe;
+}
+
+/* Glassmorphism Styles for Glass-type Look */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 10px 40px -5px rgba(6, 60, 124, 0.08), 0 2px 10px rgba(6, 169, 224, 0.05);
+}
+
+.glass-card-aqua {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(229, 248, 252, 0.75) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(6, 169, 224, 0.25);
+  box-shadow: 0 12px 36px -6px rgba(7, 93, 177, 0.1);
+}
+
+.glass-bubble {
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.95), rgba(6, 169, 224, 0.25) 70%, rgba(7, 93, 177, 0.5) 100%);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 30px rgba(6, 169, 224, 0.35), inset 0 2px 8px rgba(255, 255, 255, 0.9), inset 0 -4px 10px rgba(6, 60, 124, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 9px;
+}
+::-webkit-scrollbar-track {
+  background: #f0f9fc;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #06A9E0, #075DB1);
+  border-radius: 9999px;
+  border: 2px solid #f0f9fc;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #063C7C;
+}
+
+/* Water wave & glow keyframes */
+@keyframes waveFlow {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-25%) translateZ(0) scaleY(0.97); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
+
+@keyframes waterFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(1deg); }
+}
+
+@keyframes glassShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes caustics {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+
+.animate-wave {
+  animation: waveFlow 18s linear infinite;
+}
+
+.animate-water-float {
+  animation: waterFloat 5s ease-in-out infinite;
+}
+
+.animate-glass-shimmer {
+  animation: glassShimmer 3.5s ease-in-out infinite;
+}
