@@ -52,17 +52,19 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
   const isGu = lang === 'gu';
 
   const [activeTab, setActiveTab] = useState<'reels' | 'photos'>('reels');
-  // Currently active reel that is playing with full audio
+  // Currently active reel that is playing with full audio (defaults to Reel 1)
   const [activeAudioReelId, setActiveAudioReelId] = useState<number>(1);
+  
+  // ALL 8 videos play simultaneously as autoplay
   const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({
     1: true,
-    2: false,
-    3: false,
-    4: false,
-    5: false,
-    6: false,
-    7: false,
-    8: false,
+    2: true,
+    3: true,
+    4: true,
+    5: true,
+    6: true,
+    7: true,
+    8: true,
   });
 
   const [activeModalReel, setActiveModalReel] = useState<ReelItem | null>(null);
@@ -230,28 +232,23 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
     },
   ];
 
-  // Play video with audio automatically
+  // Play a specific reel with audio while keeping ALL OTHER VIDEOS PLAYING CONTINUOUSLY
   const playReelWithAudio = useCallback((id: number) => {
     setActiveAudioReelId(id);
 
-    // Pause all other videos so only one reel's audio plays at a time
+    // Keep ALL 8 videos playing simultaneously, routing unmuted audio to the selected reel
     Object.entries(videoRefs.current).forEach(([k, vid]) => {
       const vidId = Number(k);
       if (vid) {
         if (vidId === id) {
           vid.muted = false;
           vid.volume = 1.0;
-          vid.play().then(() => {
-            setPlayingStates((prev) => ({ ...prev, [id]: true }));
-          }).catch(() => {
-            // If browser blocks audio without user gesture, start unmuted upon first interaction
-            vid.muted = false;
-            vid.play().catch(() => {});
-          });
         } else {
-          vid.pause();
-          setPlayingStates((prev) => ({ ...prev, [vidId]: false }));
+          vid.muted = true;
         }
+        // ALL videos play! None are paused!
+        vid.play().catch(() => {});
+        setPlayingStates((prev) => ({ ...prev, [vidId]: true }));
       }
     });
   }, []);
@@ -271,10 +268,6 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
 
   // Open full modal for a reel with automatic audio
   const openModal = (reel: ReelItem) => {
-    // Pause background reel
-    if (videoRefs.current[activeAudioReelId]) {
-      videoRefs.current[activeAudioReelId]?.pause();
-    }
     setActiveModalReel(reel);
     setModalPlaying(true);
   };
@@ -284,7 +277,7 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
       modalVideoRef.current.pause();
     }
     setActiveModalReel(null);
-    // Resume active reel in grid
+    // Keep all reels playing in background
     playReelWithAudio(activeAudioReelId);
   };
 
@@ -304,35 +297,62 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
     setModalPlaying(true);
   };
 
-  // Automatic unmuted audio playback initialization on load & first user gesture
+  // AUTOMATIC AUTOPLAY FOR ALL 8 VIDEOS SIMULTANEOUSLY
   useEffect(() => {
     if (activeTab !== 'reels') return;
 
-    // Immediately attempt to play active reel with sound
-    playReelWithAudio(activeAudioReelId);
+    // Immediately trigger play on ALL 8 video elements
+    Object.entries(videoRefs.current).forEach(([k, vid]) => {
+      const vidId = Number(k);
+      if (vid) {
+        if (vidId === activeAudioReelId) {
+          vid.muted = false;
+          vid.volume = 1.0;
+        } else {
+          vid.muted = true;
+        }
+        vid.play().then(() => {
+          setPlayingStates((prev) => ({ ...prev, [vidId]: true }));
+        }).catch(() => {
+          // In case browser requires initial user interaction, fallback to muted play then unmute on first gesture
+          vid.muted = true;
+          vid.play().then(() => {
+            setPlayingStates((prev) => ({ ...prev, [vidId]: true }));
+          }).catch(() => {});
+        });
+      }
+    });
 
-    // Modern browsers require 1 interaction (click, tap, scroll) to unleash audio
-    const handleFirstGesture = () => {
+    // Global listener for first user interaction (scroll, click, touch, key) to unleash audio
+    const handleGesture = () => {
+      // Unmute active reel with full sound
       const activeVid = videoRefs.current[activeAudioReelId];
       if (activeVid) {
         activeVid.muted = false;
         activeVid.volume = 1.0;
         activeVid.play().catch(() => {});
       }
+
+      // Ensure every single video is playing
+      Object.entries(videoRefs.current).forEach(([, vid]) => {
+        if (vid) {
+          vid.play().catch(() => {});
+        }
+      });
     };
 
-    window.addEventListener('click', handleFirstGesture, { passive: true });
-    window.addEventListener('touchstart', handleFirstGesture, { passive: true });
-    window.addEventListener('scroll', handleFirstGesture, { passive: true, once: true });
-    window.addEventListener('pointerdown', handleFirstGesture, { passive: true });
+    window.addEventListener('click', handleGesture, { passive: true });
+    window.addEventListener('touchstart', handleGesture, { passive: true });
+    window.addEventListener('scroll', handleGesture, { passive: true, once: true });
+    window.addEventListener('pointerdown', handleGesture, { passive: true });
 
     return () => {
-      window.removeEventListener('click', handleFirstGesture);
-      window.removeEventListener('touchstart', handleFirstGesture);
-      window.removeEventListener('scroll', handleFirstGesture);
-      window.removeEventListener('pointerdown', handleFirstGesture);
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('touchstart', handleGesture);
+      window.removeEventListener('scroll', handleGesture);
+      window.removeEventListener('pointerdown', handleGesture);
     };
-  }, [activeTab, activeAudioReelId, playReelWithAudio]);
+  }, [activeTab, activeAudioReelId]);
 
   // When modal reel changes, play modal with full audio automatically
   useEffect(() => {
@@ -410,7 +430,7 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
         </div>
 
         {/* ========================================================= */}
-        {/* TAB 1: 8 VERTICAL AUTOPLAY REELS (DIRECT AUDIO ENABLED)   */}
+        {/* TAB 1: ALL 8 VERTICAL REELS AUTOPLAYING SIMULTANEOUSLY    */}
         {/* ========================================================= */}
         {activeTab === 'reels' && (
           <div>
@@ -421,8 +441,8 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
                   <Volume2 className="w-3.5 h-3.5 text-emerald-700 animate-pulse" />
                 </div>
                 <span className="font-extrabold text-emerald-800">{t.audioPlaying}</span>
-                <span className="text-slate-400 text-[11px] hidden sm:inline">
-                  • {isGu ? 'રીલ પર ક્લિક કરીને કોઈપણ વિડીયો લાઈવ અવાજ સાથે સાંભળો' : 'Click any reel to play live with full sound'}
+                <span className="text-slate-500 text-[11px] hidden sm:inline">
+                  • {isGu ? 'તમામ ૮ વિડીયો રીલ્સ ઓટોપ્લે થઈ રહ્યા છે' : 'All 8 video reels are playing simultaneously in autoplay'}
                 </span>
               </div>
               <span className="text-[11px] font-bold text-[#075DB1]">
@@ -430,40 +450,41 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
               </span>
             </div>
 
-            {/* Reels Grid: 4 columns on desktop, 2 on tablet, 1 on mobile */}
+            {/* Reels Grid: ALL 8 VIDEOS RUN AUTOPLAY SIMULTANEOUSLY */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {reels.map((reel) => {
                 const isCurrentActive = activeAudioReelId === reel.id;
-                const isPlaying = playingStates[reel.id] ?? false;
+                const isPlaying = playingStates[reel.id] ?? true;
 
                 return (
                   <div
                     key={reel.id}
-                    onClick={() => togglePlay(reel.id)}
+                    onClick={() => playReelWithAudio(reel.id)}
+                    onMouseEnter={() => playReelWithAudio(reel.id)}
                     className={`group relative rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 bg-slate-950 flex flex-col aspect-[9/16] cursor-pointer ${
                       isCurrentActive
                         ? 'border-4 border-cyan-400 ring-4 ring-cyan-400/20 shadow-cyan-900/30'
                         : 'border-2 border-white/80 hover:border-cyan-300'
                     }`}
                   >
-                    {/* Native Video Element with Unmuted Audio Playback */}
+                    {/* Native Video Element with Guaranteed Autoplay Across All 8 Videos */}
                     <video
                       ref={(el) => {
                         videoRefs.current[reel.id] = el;
                       }}
                       src={reel.src}
                       poster={reel.thumb}
-                      autoPlay={isCurrentActive}
-                      loop
-                      playsInline
-                      preload="metadata"
+                      autoPlay={true}
+                      loop={true}
+                      playsInline={true}
+                      preload="auto"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
 
                     {/* Gradient Overlays for Readability */}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-transparent to-slate-950/50 pointer-events-none" />
 
-                    {/* Top Bar: LIVE Indicator + Audio Active Pill + Fullscreen Icon */}
+                    {/* Top Bar: LIVE Indicator + Audio Active Indicator + Fullscreen Icon */}
                     <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600/90 text-white text-[10px] font-black uppercase tracking-wider backdrop-blur-md shadow-sm">
                         <span className="w-2 h-2 rounded-full bg-white animate-ping" />
@@ -471,10 +492,10 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
                       </div>
 
                       <div className="flex items-center gap-1.5">
-                        {/* Live Audio Indicator (No Mute Toggle) */}
-                        {isCurrentActive && isPlaying && (
-                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600/90 text-white text-[10px] font-extrabold backdrop-blur-md shadow-sm">
-                            <Volume2 className="w-3.5 h-3.5 animate-bounce" />
+                        {/* Live Sound Playing Indicator */}
+                        {isCurrentActive && (
+                          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600/90 text-white text-[10px] font-extrabold backdrop-blur-md shadow-sm animate-pulse">
+                            <Volume2 className="w-3.5 h-3.5" />
                             <span>SOUND ON</span>
                           </div>
                         )}
@@ -493,10 +514,16 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
                       </div>
                     </div>
 
-                    {/* Play/Pause Center Indicator (Shown when paused) */}
+                    {/* Play/Pause Center Indicator (Only shown if manually paused) */}
                     {!isPlaying && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                        <div className="w-14 h-14 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-xl">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePlay(reel.id);
+                          }}
+                          className="w-14 h-14 rounded-full bg-slate-900/85 backdrop-blur-md border border-white/40 flex items-center justify-center shadow-xl cursor-pointer pointer-events-auto"
+                        >
                           <Play className="w-6 h-6 text-white ml-1 fill-white" />
                         </div>
                       </div>
