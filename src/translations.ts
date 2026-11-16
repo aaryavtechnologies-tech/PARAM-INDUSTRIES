@@ -60,16 +60,13 @@ export interface Translations {
     subheading: string;
     tabAll: string;
     tabPhotos: string;
-    soundOn: string;
-    soundOff: string;
     watchFull: string;
     consultOnWhatsapp: string;
     liveDemoLocation: string;
     playVideo: string;
     pauseVideo: string;
     liveProofPill: string;
-    muteHint: string;
-    unmuteHint: string;
+    audioPlaying: string;
   };
   solutions: {
     heading: string;
@@ -333,23 +330,20 @@ export const translations: Record<Language, Translations> = {
         'No monthly salt refills, zero replacement filters, and zero maintenance. Once installed in your pipeline, it works passively year after year.',
     },
     reels: {
-      badge: 'Real Site Proof • Autoplay Reels',
+      badge: 'Real Site Proof • Autoplay Video & Audio',
       heading: 'Live Demonstrations & Customer Reels',
-      tagline: 'Real Proof from Societies, Bungalows & Borewells Across Ahmedabad',
+      tagline: 'Real Proof with Live Audio from Societies, Bungalows & Borewells',
       subheading:
-        'Watch real installation videos, tap water flows, and scale protection performance filmed directly at societies, bungalows, and industrial sites across Ahmedabad, Gujarat.',
+        'Watch real installation videos, tap water flows, and scale protection performance with live audio filmed directly at societies, bungalows, and industrial sites across Ahmedabad, Gujarat.',
       tabAll: 'Video Reels (8 Live Demos)',
       tabPhotos: 'Site Installations (Photos)',
-      soundOn: 'Tap for Sound',
-      soundOff: 'Mute',
       watchFull: 'Open Full Reel',
       consultOnWhatsapp: 'Enquire About This Installation',
       liveDemoLocation: 'Ahmedabad, Gujarat • Real Site Verification',
       playVideo: 'Play Reel',
       pauseVideo: 'Pause Reel',
       liveProofPill: '100% Real Site Demonstration',
-      muteHint: 'Muted for autoplay. Tap sound icon to hear live audio.',
-      unmuteHint: 'Audio playing.',
+      audioPlaying: 'Live Sound Active',
     },
     solutions: {
       heading: 'Innovative Solutions for a Smarter Future',
@@ -707,23 +701,20 @@ export const translations: Record<Language, Translations> = {
         'દર મહિને મીઠું ઉમેરવાની ઝંઝટ નહીં, કોઈ ફિલ્ટર બદલવાનું નહીં, આજીવન કોઈ મેન્ટેનન્સ નહીં. પાઇપલાઇનમાં એકવાર લગાવ્યા પછી નિશ્ચિંત રહો.',
     },
     reels: {
-      badge: 'વાસ્તવિક સાઈટ પરિણામો • ઓટોપ્લે રીલ્સ',
+      badge: 'વાસ્તવિક સાઈટ પરિણામો • ઓટોપ્લે વિડીયો અને અવાજ',
       heading: 'લાઈવ સાઈટ ડેમોસ્ટ્રેશન અને વિડીયો રીલ્સ',
-      tagline: 'અમદાવાદ અને ગુજરાતની સોસાયટીઓ અને બંગલાઓના અસલી પરિણામો',
+      tagline: 'અમદાવાદ અને ગુજરાતની સોસાયટીઓના અસલી પરિણામો લાઈવ અવાજ સાથે',
       subheading:
-        'અમદાવાદ અને ગુજરાતભરની સોસાયટીઓ, બંગલાઓ અને ફેક્ટરીઓમાં થયેલા સાચા ઇન્સ્ટોલેશન અને પરિણામોના વાસ્તવિક વિડીયો રીલ્સ જુઓ.',
+        'અમદાવાદ અને ગુજરાતભરની સોસાયટીઓ, બંગલાઓ અને ફેક્ટરીઓમાં થયેલા સાચા ઇન્સ્ટોલેશન અને પરિણામોના વાસ્તવિક વિડીયો રીલ્સ અસલી સાઉન્ડ સાથે જુઓ.',
       tabAll: 'વિડીયો રીલ્સ (૮ લાઈવ ડેમો)',
       tabPhotos: 'સાઈટ ઇન્સ્ટોલેશન (વાસ્તવિક ફોટા)',
-      soundOn: 'અવાજ માટે ટેપ કરો',
-      soundOff: 'અવાજ બંધ કરો',
       watchFull: 'આખી રીલ જુઓ',
       consultOnWhatsapp: 'આ ઇન્સ્ટોલેશન અંગે પૂછપરછ કરો',
       liveDemoLocation: 'અમદાવાદ, ગુજરાત • ૧૦૦% વાસ્તવિક સાઈટ',
       playVideo: 'રીલ ચલાવો',
       pauseVideo: 'રીલ થોભાવો',
       liveProofPill: '૧૦૦% વાસ્તવિક સાઈટ પ્રૂફ',
-      muteHint: 'ઓટોપ્લે માટે અવાજ બંધ છે. લાઈવ અવાજ સાંભળવા સાઉન્ડ આઇકોન દબાવો.',
-      unmuteHint: 'લાઈવ અવાજ ચાલુ છે.',
+      audioPlaying: 'લાઈવ અવાજ ચાલુ છે',
     },
     solutions: {
       heading: 'સ્માર્ટર ભવિષ્ય માટે નવીન સોલ્યુશન્સ',
