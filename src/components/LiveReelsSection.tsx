@@ -19,6 +19,7 @@ import {
 interface Props {
   lang: Language;
   onConsultClick: () => void;
+  activeSection?: string;
 }
 
 interface ReelItem {
@@ -47,7 +48,7 @@ interface PhotoItem {
   tagGu: string;
 }
 
-export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
+export const LiveReelsSection: React.FC<Props> = ({ lang, activeSection }) => {
   const t = translations[lang].reels;
   const isGu = lang === 'gu';
 
@@ -55,22 +56,14 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
   // Currently active reel that is playing with full audio (defaults to Reel 1)
   const [activeAudioReelId, setActiveAudioReelId] = useState<number>(1);
   
-  // ALL 8 videos play simultaneously as autoplay
-  const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({
-    1: true,
-    2: true,
-    3: true,
-    4: true,
-    5: true,
-    6: true,
-    7: true,
-    8: true,
-  });
+  // Track playback states for videos
+  const [playingStates, setPlayingStates] = useState<Record<number, boolean>>({});
 
   const [activeModalReel, setActiveModalReel] = useState<ReelItem | null>(null);
   const [modalPlaying, setModalPlaying] = useState<boolean>(true);
 
-  // References to video elements & reel card wrappers
+  // References to section, video elements & reel card wrappers
+  const sectionRef = useRef<HTMLElement | null>(null);
   const videoRefs = useRef<Record<number, HTMLVideoElement | null>>({});
   const cardRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const modalVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -233,11 +226,92 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
     },
   ];
 
-  // Play a specific reel with audio while keeping ALL 8 VIDEOS PLAYING
+  // Stop and mute ALL reels (ensures ZERO background playback when user is on home page or other sections)
+  const pauseAndMuteAllVideos = useCallback(() => {
+    Object.values(videoRefs.current).forEach((vid) => {
+      if (vid) {
+        vid.pause();
+        vid.muted = true;
+      }
+    });
+    if (modalVideoRef.current) {
+      modalVideoRef.current.pause();
+      modalVideoRef.current.muted = true;
+    }
+    setPlayingStates({});
+  }, []);
+
+  // Resume playback and route live audio ONLY for reels currently visible inside the viewport
+  const resumeVisibleReels = useCallback((targetAudioId?: number) => {
+    const section = sectionRef.current || document.getElementById('reels');
+    if (!section) return;
+
+    const sRect = section.getBoundingClientRect();
+    const isSectionVisible = sRect.bottom > 80 && sRect.top < window.innerHeight - 80;
+    if (!isSectionVisible) {
+      pauseAndMuteAllVideos();
+      return;
+    }
+
+    const audioId = targetAudioId ?? activeAudioReelId;
+    let closestId = audioId;
+    let minDistance = Infinity;
+    const viewportCenter = window.innerHeight / 2;
+
+    Object.entries(cardRefs.current).forEach(([k, card]) => {
+      const vidId = Number(k);
+      const vid = videoRefs.current[vidId];
+      if (card && vid) {
+        const rect = card.getBoundingClientRect();
+        const cardCenter = rect.top + rect.height / 2;
+        const dist = Math.abs(viewportCenter - cardCenter);
+        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+        if (isVisible) {
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestId = vidId;
+          }
+          vid.play().catch(() => {});
+          setPlayingStates((prev) => ({ ...prev, [vidId]: true }));
+        } else {
+          vid.pause();
+          vid.muted = true;
+          setPlayingStates((prev) => ({ ...prev, [vidId]: false }));
+        }
+      }
+    });
+
+    if (closestId) {
+      setActiveAudioReelId(closestId);
+      Object.entries(videoRefs.current).forEach(([k, vid]) => {
+        const vidId = Number(k);
+        if (vid) {
+          if (vidId === closestId) {
+            vid.muted = false;
+            vid.volume = 1.0;
+          } else {
+            vid.muted = true;
+          }
+        }
+      });
+    }
+  }, [activeAudioReelId, pauseAndMuteAllVideos]);
+
+  // Play a specific reel with audio while keeping visible reels playing
   const playReelWithAudio = useCallback((id: number) => {
+    const section = sectionRef.current || document.getElementById('reels');
+    if (section) {
+      const rect = section.getBoundingClientRect();
+      const inView = rect.bottom > 80 && rect.top < window.innerHeight - 80;
+      if (!inView) {
+        pauseAndMuteAllVideos();
+        return;
+      }
+    }
+
     setActiveAudioReelId(id);
 
-    // Keep ALL 8 videos playing continuously, enabling live audio on the target reel
     Object.entries(videoRefs.current).forEach(([k, vid]) => {
       const vidId = Number(k);
       if (vid) {
@@ -251,7 +325,7 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
         setPlayingStates((prev) => ({ ...prev, [vidId]: true }));
       }
     });
-  }, []);
+  }, [pauseAndMuteAllVideos]);
 
   // Toggle play/pause for a specific reel
   const togglePlay = (id: number) => {
@@ -261,6 +335,7 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
         playReelWithAudio(id);
       } else {
         vid.pause();
+        vid.muted = true;
         setPlayingStates((prev) => ({ ...prev, [id]: false }));
       }
     }
@@ -268,6 +343,10 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
 
   // Open full modal for a reel with automatic audio
   const openModal = (reel: ReelItem) => {
+    // Pause background reels while modal is open
+    Object.values(videoRefs.current).forEach((vid) => {
+      if (vid) vid.pause();
+    });
     setActiveModalReel(reel);
     setModalPlaying(true);
   };
@@ -275,9 +354,19 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
   const closeModal = () => {
     if (modalVideoRef.current) {
       modalVideoRef.current.pause();
+      modalVideoRef.current.muted = true;
     }
     setActiveModalReel(null);
-    playReelWithAudio(activeAudioReelId);
+
+    const section = sectionRef.current || document.getElementById('reels');
+    if (section) {
+      const rect = section.getBoundingClientRect();
+      if (rect.bottom > 80 && rect.top < window.innerHeight - 80) {
+        resumeVisibleReels(activeAudioReelId);
+      } else {
+        pauseAndMuteAllVideos();
+      }
+    }
   };
 
   const nextModalReel = () => {
@@ -297,122 +386,95 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
   };
 
   // =========================================================================
-  // SCROLL-DRIVEN AUTOPLAY & AUDIO ENGINE (INTERSECTION OBSERVER + SCROLL TRACKER)
+  // EFFECT 1: Immediate pause when activeSection is NOT 'reels' (e.g. user on Home page)
   // =========================================================================
   useEffect(() => {
-    if (activeTab !== 'reels') return;
+    if (activeSection && activeSection !== 'reels') {
+      // User navigated to another section (e.g. 'home', 'healthy-life', 'solutions') -> PAUSE ALL!
+      pauseAndMuteAllVideos();
+    } else if (activeSection === 'reels' && activeTab === 'reels') {
+      resumeVisibleReels();
+    }
+  }, [activeSection, activeTab, pauseAndMuteAllVideos, resumeVisibleReels]);
 
-    // 1. Initial play trigger on all videos
-    Object.entries(videoRefs.current).forEach(([k, vid]) => {
-      const vidId = Number(k);
-      if (vid) {
-        if (vidId === activeAudioReelId) {
-          vid.muted = false;
-          vid.volume = 1.0;
-        } else {
-          vid.muted = true;
-        }
-        vid.play().catch(() => {
-          vid.muted = true;
-          vid.play().catch(() => {});
-        });
+  // =========================================================================
+  // EFFECT 2: Viewport Intersection Observer & Continuous Scroll Engine
+  // =========================================================================
+  useEffect(() => {
+    if (activeTab !== 'reels') {
+      pauseAndMuteAllVideos();
+      return;
+    }
+
+    const sectionEl = sectionRef.current || document.getElementById('reels');
+    if (!sectionEl) return;
+
+    const checkSectionInView = () => {
+      const rect = sectionEl.getBoundingClientRect();
+      return rect.bottom > 80 && rect.top < window.innerHeight - 80;
+    };
+
+    // On mount or tab switch, if user is not in the reels section (e.g. at the top on Home page), ensure paused
+    if (!checkSectionInView()) {
+      pauseAndMuteAllVideos();
+    } else {
+      resumeVisibleReels();
+    }
+
+    // A. Section-level observer: triggers immediately when scrolling away from reels
+    let sectionObserver: IntersectionObserver | null = null;
+    if ('IntersectionObserver' in window) {
+      sectionObserver = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          const inView = entry.isIntersecting && entry.intersectionRatio > 0;
+          if (!inView) {
+            // User scrolled away from reels (e.g. back to home page) -> PAUSE & MUTE ALL!
+            pauseAndMuteAllVideos();
+          } else {
+            resumeVisibleReels();
+          }
+        },
+        { threshold: [0, 0.05, 0.2] }
+      );
+      sectionObserver.observe(sectionEl);
+    }
+
+    // B. Scroll / Resize / HashChange Handler
+    const handleScrollOrNav = () => {
+      const inView = checkSectionInView();
+      if (!inView) {
+        pauseAndMuteAllVideos();
+        return;
       }
-    });
+      resumeVisibleReels();
+    };
 
-    // 2. IntersectionObserver to detect when videos scroll into the viewport
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const targetId = Number(entry.target.getAttribute('data-reel-id'));
-          const vid = videoRefs.current[targetId];
-
-          if (entry.isIntersecting && vid) {
-            // Video is in view: ensure it is playing
-            vid.play().catch(() => {});
-
-            // If it is significantly in view (ratio > 0.6), seamlessly switch live audio to it!
-            if (entry.intersectionRatio >= 0.5) {
-              setActiveAudioReelId(targetId);
-              vid.muted = false;
-              vid.volume = 1.0;
-              // Mute other background videos
-              Object.entries(videoRefs.current).forEach(([k, otherVid]) => {
-                if (otherVid && Number(k) !== targetId) {
-                  otherVid.muted = true;
-                }
-              });
-            }
-          }
-        });
-      },
-      {
-        threshold: [0.2, 0.5, 0.8],
-      }
-    );
-
-    // Observe each reel card wrapper
-    Object.values(cardRefs.current).forEach((card) => {
-      if (card) observer.observe(card);
-    });
-
-    // 3. Continuous Scroll Event Listener (Plays all videos & enables audio as you scroll)
-    const handleScroll = () => {
-      // Find the reel closest to the center of the screen
-      const viewportCenter = window.innerHeight / 2;
-      let closestId = activeAudioReelId;
-      let minDistance = Infinity;
-
-      Object.entries(cardRefs.current).forEach(([k, card]) => {
-        if (card) {
-          const rect = card.getBoundingClientRect();
-          const cardCenter = rect.top + rect.height / 2;
-          const dist = Math.abs(viewportCenter - cardCenter);
-          if (rect.top < window.innerHeight && rect.bottom > 0) {
-            // Card is visible in viewport: ensure its video is playing!
-            const vidId = Number(k);
-            const vid = videoRefs.current[vidId];
-            if (vid) {
-              vid.play().catch(() => {});
-              setPlayingStates((prev) => ({ ...prev, [vidId]: true }));
-            }
-            if (dist < minDistance) {
-              minDistance = dist;
-              closestId = vidId;
-            }
-          }
-        }
-      });
-
-      // Unmute and route live sound to the reel closest to center
-      if (closestId && closestId !== activeAudioReelId) {
-        setActiveAudioReelId(closestId);
-        const centerVid = videoRefs.current[closestId];
-        if (centerVid) {
-          centerVid.muted = false;
-          centerVid.volume = 1.0;
-          centerVid.play().catch(() => {});
-        }
-        Object.entries(videoRefs.current).forEach(([k, otherVid]) => {
-          if (otherVid && Number(k) !== closestId) {
-            otherVid.muted = true;
-          }
-        });
+    // C. Page visibility handler (tab switch, browser minimize)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        pauseAndMuteAllVideos();
+      } else if (checkSectionInView()) {
+        resumeVisibleReels();
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('wheel', handleScroll, { passive: true });
-    window.addEventListener('touchmove', handleScroll, { passive: true });
-    window.addEventListener('click', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScrollOrNav, { passive: true });
+    window.addEventListener('wheel', handleScrollOrNav, { passive: true });
+    window.addEventListener('touchmove', handleScrollOrNav, { passive: true });
+    window.addEventListener('hashchange', handleScrollOrNav, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('wheel', handleScroll);
-      window.removeEventListener('touchmove', handleScroll);
-      window.removeEventListener('click', handleScroll);
+      if (sectionObserver) sectionObserver.disconnect();
+      window.removeEventListener('scroll', handleScrollOrNav);
+      window.removeEventListener('wheel', handleScrollOrNav);
+      window.removeEventListener('touchmove', handleScrollOrNav);
+      window.removeEventListener('hashchange', handleScrollOrNav);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      pauseAndMuteAllVideos();
     };
-  }, [activeTab, activeAudioReelId]);
+  }, [activeTab, pauseAndMuteAllVideos, resumeVisibleReels]);
 
   // When modal reel changes, play modal with full audio automatically
   useEffect(() => {
@@ -428,7 +490,7 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
   }, [activeModalReel]);
 
   return (
-    <section id="reels" className="py-20 relative overflow-hidden bg-gradient-to-b from-white via-sky-50/50 to-white">
+    <section id="reels" ref={sectionRef} className="py-20 relative overflow-hidden bg-gradient-to-b from-white via-sky-50/50 to-white">
       {/* Background Motifs */}
       <div className="absolute inset-0 pointer-events-none -z-10 opacity-30">
         <div className="absolute top-1/3 left-10 w-96 h-96 rounded-full bg-cyan-200/40 blur-3xl" />
@@ -531,17 +593,17 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
                         : 'border-2 border-white/80 hover:border-cyan-300'
                     }`}
                   >
-                    {/* Native Video Element with Guaranteed Autoplay Across All 8 Videos */}
+                    {/* Native Video Element with Controlled Viewport Autoplay */}
                     <video
                       ref={(el) => {
                         videoRefs.current[reel.id] = el;
                       }}
                       src={reel.src}
                       poster={reel.thumb}
-                      autoPlay={true}
+                      autoPlay={false}
                       loop={true}
                       playsInline={true}
-                      preload="auto"
+                      preload="metadata"
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
 
@@ -557,7 +619,7 @@ export const LiveReelsSection: React.FC<Props> = ({ lang }) => {
 
                       <div className="flex items-center gap-1.5">
                         {/* Live Sound Playing Indicator */}
-                        {isCurrentActive && (
+                        {isCurrentActive && isPlaying && (
                           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-600/90 text-white text-[10px] font-extrabold backdrop-blur-md shadow-sm animate-pulse">
                             <Volume2 className="w-3.5 h-3.5" />
                             <span>SOUND ON</span>

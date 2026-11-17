@@ -232,6 +232,7 @@ export function App() {
         <LiveReelsSection
           lang={lang}
           onConsultClick={scrollToContact}
+          activeSection={activeSection}
         />
 
         {/* SECTION 3: Our Innovative Solutions (4 Primary Categories) */}
